@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using NewRelic.OpenTelemetry;
 using OpenTelemetry.Instrumentation.StackExchangeRedis;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -49,6 +50,9 @@ Action<ResourceBuilder> appResourceBuilder =
     resource => resource
         .AddDetector(new ContainerResourceDetector());
 
+var otlpExporter = new OpenTelemetry.Exporter.OtlpTraceExporter(new OpenTelemetry.Exporter.OtlpExporterOptions());
+var hopBatchProcessor = new NewRelic.OpenTelemetry.HopExportProcessor(otlpExporter);
+
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(appResourceBuilder)
     .WithTracing(tracerBuilder => tracerBuilder
@@ -57,7 +61,7 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddGrpcClientInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddOtlpExporter())
+        .AddProcessor(hopBatchProcessor))
     .WithMetrics(meterBuilder => meterBuilder
         .AddRuntimeInstrumentation()
         .AddAspNetCoreInstrumentation()
