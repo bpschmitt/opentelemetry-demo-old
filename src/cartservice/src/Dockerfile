@@ -17,6 +17,12 @@
 # https://mcr.microsoft.com/v2/dotnet/sdk/tags/list
 FROM mcr.microsoft.com/dotnet/sdk:6.0.412 AS builder
 
+WORKDIR /usr/src
+RUN git clone https://github.com/alanwest/opentelemetry-dotnet-contrib.git
+WORKDIR /usr/src/opentelemetry-dotnet-contrib
+RUN git checkout alanwest/newrelic-processor
+ARG OTEL_DOTNET_CONTRIB_SRC=/usr/src/opentelemetry-dotnet-contrib
+
 WORKDIR /usr/src/app/
 
 COPY ./src/cartservice/ ./

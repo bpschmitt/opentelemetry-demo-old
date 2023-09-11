@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(OTEL_DOTNET_CONTRIB_SRC)\src\NewRelic.OpenTelemetry\NewRelic.OpenTelemetry.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Protobuf Include="**\*.proto" GrpcServices="Both" />
   </ItemGroup>
 </Project>
