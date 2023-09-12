@@ -2,3 +2,30 @@
 # SPDX-License-Identifier: Apache-2.0
 # extra settings to be merged into OpenTelemetry Collector configuration
 # do not delete this file
+
+processors:
+  newrelicapm:
+
+exporters:
+  otlp/newrelic:
+    endpoint: $NEW_RELIC_OTLP_ENDPOINT
+    headers:
+      api-key: $NEW_RELIC_API_KEY
+
+connectors:
+  newrelicapm:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [newrelicapm, batch]
+      exporters: [otlp/newrelic, otlp, logging, newrelicapm, spanmetrics]
+    metrics:
+      receivers: [otlp, newrelicapm, spanmetrics]
+      processors: [filter, batch]
+      exporters: [otlp/newrelic, prometheus, logging]
+    logs:
+      receivers: [otlp, newrelicapm]
+      processors: [batch]
+      exporters: [otlp/newrelic, logging]
