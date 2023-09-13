@@ -21,10 +21,10 @@ service:
       receivers: [otlp]
       processors: [newrelicapm, batch]
       exporters: [otlp/newrelic, otlp, logging, newrelicapm, spanmetrics]
-    metrics:
-      receivers: [otlp, newrelicapm, spanmetrics]
-      processors: [filter, batch]
-      exporters: [otlp/newrelic, prometheus, logging]
+    metrics/newrelic:
+      receivers: [otlp, newrelicapm]
+      processors: [batch]
+      exporters: [otlp/newrelic]
     logs:
       receivers: [otlp, newrelicapm]
       processors: [batch]
