@@ -62,8 +62,8 @@ keeping it up to date for you.
 | [Axoflow][Axoflow]                      | [Honeycomb.io][Honeycombio] | [Sumo Logic][SumoLogic]                                        |
 | [Azure Data Explorer][Azure]            | [Instana][Instana]          | [TelemetryHub][TelemetryHub]                                   |
 | [Coralogix][Coralogix]                  | [Kloudfuse][Kloudfuse]      | [Teletrace][Teletrace]                                         |
-| [Datadog][Datadog]                      | [Logz.io][Logzio]           | [Uptrace][Uptrace]                                             |
-| [Dynatrace][Dynatrace]                  | [New Relic][NewRelic]       |                                                                |
+| [Datadog][Datadog]                      | [Logz.io][Logzio]           | [Tracetest][Tracetest]                                         |
+| [Dynatrace][Dynatrace]                  | [New Relic][NewRelic]       | [Uptrace][Uptrace]                                             |
 
 ## Contributing
 
@@ -76,7 +76,7 @@ Monday at 8:30 AM PST and anyone is welcome.
 [Maintainers](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer)
 ([@open-telemetry/demo-maintainers](https://github.com/orgs/open-telemetry/teams/demo-maintainers)):
 
-- [Austin Parker](https://github.com/austinlparker), Lightstep
+- [Austin Parker](https://github.com/austinlparker), Honeycomb
 - [Carter Socha](https://github.com/cartersocha), Lightstep
 - [Juliano Costa](https://github.com/julianocosta89), Dynatrace
 - [Pierre Tessier](https://github.com/puckpuck), Honeycomb
@@ -84,6 +84,7 @@ Monday at 8:30 AM PST and anyone is welcome.
 [Approvers](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver)
 ([@open-telemetry/demo-approvers](https://github.com/orgs/open-telemetry/teams/demo-approvers)):
 
+- [Cedric Ziel](https://github.com/cedricziel) Grafana Labs
 - [Mikko Viitanen](https://github.com/mviitane), Dynatrace
 - [Penghan Wang](https://github.com/wph95), AppDynamics
 - [Reiley Yang](https://github.com/reyang), Microsoft
@@ -127,4 +128,5 @@ Emeritus:
 [SumoLogic]: https://www.sumologic.com/blog/common-opentelemetry-demo-application/
 [TelemetryHub]: https://github.com/TelemetryHub/opentelemetry-demo/tree/telemetryhub-backend
 [Teletrace]: https://github.com/teletrace/opentelemetry-demo
+[Tracetest]: https://github.com/kubeshop/opentelemetry-demo
 [Uptrace]: https://github.com/uptrace/uptrace/tree/master/example/opentelemetry-demo
