@@ -4,16 +4,6 @@
 
 FROM eclipse-temurin:21-jdk as builder
 
-WORKDIR /usr/src/
-
-RUN apt-get update && apt-get install unzip
-
-RUN curl -L https://github.com/jack-berg/opentelemetry-java-contrib/archive/refs/heads/local-trace-batch-processor.zip --output contrib.zip \
-     && unzip contrib.zip \
-     && mv opentelemetry-java-contrib-local-trace-batch-processor ./contrib \
-     && cd contrib \
-     && ./gradlew :processors:assemble
-
 WORKDIR /usr/src/app/
 
 COPY ./src/adservice/gradlew* ./src/adservice/settings.gradle* ./src/adservice/build.gradle .
@@ -34,9 +24,8 @@ ARG version=1.31.0
 WORKDIR /usr/src/app/
 
 COPY --from=builder /usr/src/app/ ./
-COPY --from=builder /usr/src/contrib/processors/build/libs/local-trace-batch-processor.jar ./local-trace-batch-processor.jar
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /usr/src/app/opentelemetry-javaagent.jar
-ENV JAVA_TOOL_OPTIONS="-javaagent:/usr/src/app/opentelemetry-javaagent.jar -Dotel.javaagent.extensions=/usr/src/app/local-trace-batch-processor.jar"
+ENV JAVA_TOOL_OPTIONS=-javaagent:/usr/src/app/opentelemetry-javaagent.jar
 
 EXPOSE ${AD_SERVICE_PORT}
 ENTRYPOINT [ "./build/install/opentelemetry-demo-ad-service/bin/AdService" ]
