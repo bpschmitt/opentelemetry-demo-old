@@ -1,7 +1,7 @@
 FROM golang:1.20 as builder
 
 WORKDIR /builder
-COPY builder .
+COPY ./src/otelcollector/builder .
 RUN CGO_ENABLED=0 GOOS=linux make
 
 FROM scratch
