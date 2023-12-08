@@ -1,0 +1,39 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  logging:
+    verbosity: normal
+  otlp:
+    endpoint: $NEW_RELIC_OTLP_ENDPOINT
+    headers:
+      api-key: $NEW_RELIC_API_KEY
+
+processors:
+  batch:
+  newrelicapm:
+
+connectors:
+  newrelicapm:
+  newrelicapm/metrics:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [newrelicapm, batch]
+      exporters: [otlp, logging, newrelicapm]
+    metrics:
+      receivers: [otlp, newrelicapm]
+      processors: [newrelicapm, batch]
+      exporters: [otlp, logging, newrelicapm/metrics]
+    metrics/apm:
+      receivers: [newrelicapm/metrics]
+      processors: [batch]
+      exporters: [otlp, logging]
+    logs:
+      receivers: [otlp, newrelicapm]
+      processors: [newrelicapm, batch]
+      exporters: [otlp, logging]

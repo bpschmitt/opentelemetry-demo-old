@@ -17,29 +17,17 @@
 #      traces:
 #        exporters: [spanmetrics, otlphttp/example]
 
-processors:
-  newrelicapm:
-
 exporters:
-  otlp/newrelic:
-    endpoint: $NEW_RELIC_OTLP_ENDPOINT
-    headers:
-      api-key: $NEW_RELIC_API_KEY
-
-connectors:
-  newrelicapm:
+  otlp/nrdot:
+    endpoint: "nrdot:4317"
+    tls:
+      insecure: true
 
 service:
   pipelines:
     traces:
-      receivers: [otlp]
-      processors: [newrelicapm, batch]
-      exporters: [otlp/newrelic, otlp, logging, newrelicapm, spanmetrics]
-    metrics/newrelic:
-      receivers: [otlp, newrelicapm]
-      processors: [batch]
-      exporters: [otlp/newrelic]
+      exporters: [otlp/nrdot, otlp, debug, spanmetrics]
+    metrics:
+      exporters: [otlp/nrdot, otlphttp/prometheus, debug]
     logs:
-      receivers: [otlp, newrelicapm]
-      processors: [batch]
-      exporters: [otlp/newrelic, logging]
+      exporters: [otlp/nrdot, otlp/logs, debug]

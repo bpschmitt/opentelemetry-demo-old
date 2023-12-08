@@ -4,7 +4,7 @@ OTELCOL_BUILDER_VERSION ?= 0.83.0
 OTELCOL_BUILDER_DIR ?= ${HOME}/bin
 OTELCOL_BUILDER ?= ${OTELCOL_BUILDER_DIR}/ocb
 
-DISTRIBUTIONS ?= "nrdemocol"
+DISTRIBUTIONS ?= "nrdot"
 
 build: go ocb
 	@./scripts/build.sh -d "${DISTRIBUTIONS}" -b ${OTELCOL_BUILDER} -g ${GO}

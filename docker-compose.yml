@@ -646,9 +646,7 @@ services:
 
   # OpenTelemetry Collector
   otelcol:
-    build:
-      dockerfile: ./src/otelcollector/Dockerfile
-      context: ./
+    image: otel/opentelemetry-collector-contrib:0.88.0
     container_name: otel-col
     deploy:
       resources:
@@ -666,9 +664,28 @@ services:
       - jaeger
     logging: *logging
     environment:
+      - ENVOY_PORT
+
+  # NRDOT
+  nrdot:
+    build:
+      dockerfile: ./src/nrdot/Dockerfile
+      context: ./
+    container_name: nrdot
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    restart: unless-stopped
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+      - ./src/nrdot/otelcol-config.yml:/etc/otelcol-config.yml
+    ports:
+      - "4317"          # OTLP over gRPC receiver
+    logging: *logging
+    environment:
       - NEW_RELIC_OTLP_ENDPOINT
       - NEW_RELIC_API_KEY
-      - ENVOY_PORT
 
   # Prometheus
   prometheus:
