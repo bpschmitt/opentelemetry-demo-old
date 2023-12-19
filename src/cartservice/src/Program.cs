@@ -63,6 +63,7 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddProcessor(hopBatchProcessor))
     .WithMetrics(meterBuilder => meterBuilder
+        .AddProcessInstrumentation()
         .AddRuntimeInstrumentation()
         .AddAspNetCoreInstrumentation()
         .AddOtlpExporter());
