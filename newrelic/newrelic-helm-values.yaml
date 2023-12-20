@@ -1,0 +1,31 @@
+# Overrides values from https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-demo/values.yaml
+default:
+  image:
+    repository: us-docker.pkg.dev/$PROJECT_ID/gcr.io/demo
+    tag: "$DEMO_VERSION"
+    pullPolicy: Always
+
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp/nrdot:
+        endpoint: '{{ include "otel-demo.name" . }}-nrotelcol:4317'
+        tls:
+          insecure: true
+      otlp/newrelic:
+        endpoint: $NEW_RELIC_OTLP_ENDPOINT
+        headers:
+          api-key: $NEW_RELIC_API_KEY_OTEL
+
+    service:
+      pipelines:
+        logs:
+          processors: [memory_limiter, resource, batch]
+          exporters: [debug, otlp/nrdot, otlp/newrelic]
+        traces:
+          processors: [memory_limiter, resource, batch]
+          exporters: [otlp, debug, spanmetrics, otlp/nrdot, otlp/newrelic]
+        metrics:
+          receivers: [otlp, spanmetrics]
+          processors: [memory_limiter, filter/ottl, transform, resource, batch]
+          exporters: [otlphttp/prometheus, debug, otlp/nrdot, otlp/newrelic]
