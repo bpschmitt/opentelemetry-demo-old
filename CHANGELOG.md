@@ -7,12 +7,27 @@ release.
 
 ## Unreleased
 
+* [grafana] update grafana to 10.2.3
+  ([#1332](https://github.com/open-telemetry/opentelemetry-demo/pull/1332))
+
+## 1.7.2
+
+* [cartservice] update .NET package to 1.7.0 release
+  ([#1326](https://github.com/open-telemetry/opentelemetry-demo/pull/1326))
+* [loadgenerator and recommendationservice] Update python base image
+  ([#1329](https://github.com/open-telemetry/opentelemetry-demo/pull/1329))
+
+## 1.7.1
+
+* [grafana] revert to 10.2.0
 * [cartservice] disable config reload
   ([#1312](https://github.com/open-telemetry/opentelemetry-demo/pull/1312))
 * [cartservice] fixed cartServiceFailure feature flag
   ([#1313](https://github.com/open-telemetry/opentelemetry-demo/pull/1313))
 * [accountingservice] Update dependencies and semconv
 * ([#1316](https://github.com/open-telemetry/opentelemetry-demo/pull/1316))
+* [featureflagservice] Allow setting initial feature flag values
+  ([#1319](https://github.com/open-telemetry/opentelemetry-demo/pull/1319))
 
 ## 1.7.0
 
