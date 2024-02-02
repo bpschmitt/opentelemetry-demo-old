@@ -14,14 +14,12 @@ namespace cartservice.services;
 public class CartService : Oteldemo.CartService.CartServiceBase
 {
     private static readonly Empty Empty = new();
-    private readonly IHttpContextAccessor _contextAccessor;
     private readonly ICartStore _badCartStore;
     private readonly ICartStore _cartStore;
     private readonly FeatureFlagHelper _featureFlagHelper;
 
-    public CartService(ICartStore cartStore, ICartStore badCartStore, IHttpContextAccessor contextAccessor, FeatureFlagHelper featureFlagService)
+    public CartService(ICartStore cartStore, ICartStore badCartStore, FeatureFlagHelper featureFlagService)
     {
-        _contextAccessor = contextAccessor;
         _badCartStore = badCartStore;
         _cartStore = cartStore;
         _featureFlagHelper = featureFlagService;
@@ -76,7 +74,6 @@ public class CartService : Oteldemo.CartService.CartServiceBase
         {
             Activity.Current?.RecordException(ex);
             Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            _contextAccessor.HttpContext.Response.StatusCode = 500;
             throw;
         }
 

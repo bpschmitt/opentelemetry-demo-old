@@ -1,7 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 using System;
-
+using System.Diagnostics;
+using System.Linq;
 using cartservice.cartstore;
 using cartservice.featureflags;
 using cartservice.services;
@@ -68,8 +69,6 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddOtlpExporter());
 
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks()
     .AddCheck("Sample", () => HealthCheckResult.Healthy());
@@ -81,6 +80,15 @@ app.Services.GetRequiredService<StackExchangeRedisInstrumentation>().AddConnecti
 
 app.MapGrpcService<CartService>();
 app.MapGrpcHealthChecksService();
+
+app.Use(async (context, next) =>
+{
+    if (Activity.Current != null && Activity.Current.Events.Any(e => e.Name == "exception"))
+    {
+        context.Response.StatusCode = 500;
+    }
+    await next.Invoke();
+});
 
 app.MapGet("/", async context =>
 {
