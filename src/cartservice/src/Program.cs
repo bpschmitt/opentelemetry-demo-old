@@ -68,6 +68,8 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddOtlpExporter());
 
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks()
     .AddCheck("Sample", () => HealthCheckResult.Healthy());
