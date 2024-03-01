@@ -3,7 +3,7 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path/.."
 
 # TODO: These need to be parameterized and this script needs to be integrated with a CI workflow
-export DEMO_VERSION="1.7.0"
+export DEMO_VERSION="1.8.0"
 export PROJECT_ID=<set project id>
 export NEW_RELIC_OTLP_ENDPOINT=<NR endpoint>
 export NEW_RELIC_API_KEY_NRDOT=<NR key for telemetry routed through NRDOT>

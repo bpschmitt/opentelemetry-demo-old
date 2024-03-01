@@ -4,9 +4,19 @@ default:
     repository: us-docker.pkg.dev/$PROJECT_ID/gcr.io/demo
     tag: "$DEMO_VERSION"
     pullPolicy: Always
+  envOverrides:
+    - name: OTEL_COLLECTOR_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
 
 opentelemetry-collector:
+  mode: daemonset
   config:
+    processors:
+      resourcedetection:
+        detectors: [gcp]
+
     exporters:
       otlp/nrdot:
         endpoint: '{{ include "otel-demo.name" . }}-nrotelcol:4317'
@@ -20,12 +30,12 @@ opentelemetry-collector:
     service:
       pipelines:
         logs:
-          processors: [memory_limiter, resource, batch]
+          processors: [memory_limiter, resource, resourcedetection, batch]
           exporters: [debug, otlp/nrdot, otlp/newrelic]
         traces:
-          processors: [memory_limiter, resource, batch]
+          processors: [memory_limiter, resource, resourcedetection, batch]
           exporters: [otlp, debug, spanmetrics, otlp/nrdot, otlp/newrelic]
         metrics:
           receivers: [otlp, spanmetrics]
-          processors: [memory_limiter, filter/ottl, transform, resource, batch]
+          processors: [memory_limiter, resource, resourcedetection, batch]
           exporters: [otlphttp/prometheus, debug, otlp/nrdot, otlp/newrelic]
