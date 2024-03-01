@@ -17,6 +17,7 @@ using OpenTelemetry.Instrumentation.StackExchangeRedis;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.ResourceDetectors.Container;
+using OpenTelemetry.ResourceDetectors.Host;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -49,7 +50,8 @@ builder.Services.AddSingleton(x => new CartService(x.GetRequiredService<ICartSto
 
 Action<ResourceBuilder> appResourceBuilder =
     resource => resource
-        .AddDetector(new ContainerResourceDetector());
+        .AddDetector(new ContainerResourceDetector())
+        .AddDetector(new HostDetector());
 
 var otlpExporter = new OpenTelemetry.Exporter.OtlpTraceExporter(new OpenTelemetry.Exporter.OtlpExporterOptions());
 var hopBatchProcessor = new NewRelic.OpenTelemetry.HopExportProcessor(otlpExporter);
