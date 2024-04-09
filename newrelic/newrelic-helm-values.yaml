@@ -22,20 +22,20 @@ opentelemetry-collector:
         endpoint: '{{ include "otel-demo.name" . }}-nrotelcol:4317'
         tls:
           insecure: true
-      otlp/newrelic:
+      otlphttp/newrelic:
         endpoint: $NEW_RELIC_OTLP_ENDPOINT
         headers:
           api-key: $NEW_RELIC_API_KEY_OTEL
 
     service:
       pipelines:
-        logs:
-          processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [debug, otlp/nrdot, otlp/newrelic]
         traces:
           processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [otlp, debug, spanmetrics, otlp/nrdot, otlp/newrelic]
+          exporters: [otlp, debug, spanmetrics, otlp/newrelic]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [otlphttp/prometheus, debug, otlp/nrdot, otlp/newrelic]
+          exporters: [otlphttp/prometheus, debug, otlp/newrelic]
+        logs:
+          processors: [memory_limiter, resource, resourcedetection, batch]
+          exporters: [opensearch, debug, otlp/newrelic]

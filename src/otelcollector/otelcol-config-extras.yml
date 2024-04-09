@@ -30,4 +30,4 @@ service:
     metrics:
       exporters: [otlp/nrdot, otlphttp/prometheus, debug]
     logs:
-      exporters: [otlp/nrdot, otlp/logs, debug]
+      exporters: [otlp/nrdot, opensearch, debug]
