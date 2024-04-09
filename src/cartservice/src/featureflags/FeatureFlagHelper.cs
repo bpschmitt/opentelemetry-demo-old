@@ -26,11 +26,13 @@ public class FeatureFlagHelper
 
     public async Task<bool> GenerateCartError()
     {
-        if (Random.Next(10) != 1)
+        if (_featureFlagServiceClient == null)
         {
-            return await Task.FromResult(false);
+            return false;
         }
 
-        return await Task.FromResult(true);
+        var getFlagRequest = new GetFlagRequest { Name = "cartServiceFailure" };
+        var getFlagResponse = await _featureFlagServiceClient.GetFlagAsync(getFlagRequest);
+        return getFlagResponse.Flag.Enabled;
     }
 }
