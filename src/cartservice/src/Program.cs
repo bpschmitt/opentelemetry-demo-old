@@ -4,7 +4,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using cartservice.cartstore;
-using cartservice.featureflags;
 using cartservice.services;
 
 using Microsoft.AspNetCore.Builder;
@@ -20,6 +19,9 @@ using OpenTelemetry.ResourceDetectors.Container;
 using OpenTelemetry.ResourceDetectors.Host;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using OpenFeature;
+using OpenFeature.Contrib.Providers.Flagd;
+using OpenFeature.Contrib.Hooks.Otel;
 
 var builder = WebApplication.CreateBuilder(args);
 string redisAddress = builder.Configuration["REDIS_ADDR"];
@@ -40,13 +42,20 @@ builder.Services.AddSingleton<ICartStore>(x=>
     return store;
 });
 
-builder.Services.AddSingleton<FeatureFlagHelper>();
-builder.Services.AddSingleton(x => new CartService(x.GetRequiredService<ICartStore>(),
-    new RedisCartStore(x.GetRequiredService<ILogger<RedisCartStore>>(), "badhost:1234"),
-    x.GetRequiredService<FeatureFlagHelper>()));
+builder.Services.AddSingleton<IFeatureClient>(x => {
+    var flagdProvider = new FlagdProvider();
+    Api.Instance.SetProviderAsync(flagdProvider).GetAwaiter().GetResult();
+    var client = Api.Instance.GetClient();
+    return client;
+});
 
+builder.Services.AddSingleton(x =>
+    new CartService(
+        x.GetRequiredService<ICartStore>(),
+        new RedisCartStore(x.GetRequiredService<ILogger<RedisCartStore>>(), "badhost:1234"),
+        x.GetRequiredService<IFeatureClient>()
+));
 
-// see https://opentelemetry.io/docs/instrumentation/net/getting-started/
 
 Action<ResourceBuilder> appResourceBuilder =
     resource => resource
@@ -70,7 +79,7 @@ builder.Services.AddOpenTelemetry()
         .AddRuntimeInstrumentation()
         .AddAspNetCoreInstrumentation()
         .AddOtlpExporter());
-
+OpenFeature.Api.Instance.AddHooks(new TracingHook());
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks()
     .AddCheck("Sample", () => HealthCheckResult.Healthy());

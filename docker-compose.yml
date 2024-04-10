@@ -62,7 +62,8 @@ services:
       - "${AD_SERVICE_PORT}"
     environment:
       - AD_SERVICE_PORT
-      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - FLAGD_HOST
+      - FLAGD_PORT
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
@@ -70,6 +71,8 @@ services:
       - OTEL_SERVICE_NAME=adservice
     depends_on:
       otelcol:
+        condition: service_started
+      flagd:
         condition: service_started
     logging: *logging
 
@@ -91,7 +94,8 @@ services:
       - "${CART_SERVICE_PORT}"
     environment:
       - CART_SERVICE_PORT
-      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - FLAGD_HOST
+      - FLAGD_PORT
       - REDIS_ADDR
       - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_RESOURCE_ATTRIBUTES
@@ -101,6 +105,8 @@ services:
       redis-cart:
         condition: service_started
       otelcol:
+        condition: service_started
+      flagd:
         condition: service_started
     logging: *logging
 
@@ -121,6 +127,8 @@ services:
     ports:
       - "${CHECKOUT_SERVICE_PORT}"
     environment:
+      - FLAGD_HOST
+      - FLAGD_PORT
       - CHECKOUT_SERVICE_PORT
       - CART_SERVICE_ADDR
       - CURRENCY_SERVICE_ADDR
@@ -150,6 +158,8 @@ services:
         condition: service_started
       kafka:
         condition: service_healthy
+      flagd:
+        condition: service_started
     logging: *logging
 
   # Currency service
@@ -157,7 +167,8 @@ services:
     image: ${IMAGE_NAME}:${DEMO_VERSION}-currencyservice
     container_name: currency-service
     build:
-      context: ./src/currencyservice
+      context: ./
+      dockerfile: ./src/currencyservice/Dockerfile
       cache_from:
         - ${IMAGE_NAME}:${IMAGE_VERSION}-currencyservice
     deploy:
@@ -203,36 +214,20 @@ services:
         condition: service_started
     logging: *logging
 
-  # Feature Flag service
-  featureflagservice:
-    image: ${IMAGE_NAME}:${DEMO_VERSION}-featureflagservice
-    container_name: feature-flag-service
-    build:
-      context: ./
-      dockerfile: ./src/featureflagservice/Dockerfile
-      cache_from:
-        - ${IMAGE_NAME}:${IMAGE_VERSION}-featureflagservice
-    deploy:
-      resources:
-        limits:
-          memory: 175M
-    restart: unless-stopped
+  flagd:
+    image: ghcr.io/open-feature/flagd:v0.9.0
+    container_name: flagd
+    command: [
+      "start",
+      "--uri",
+      "file:./etc/flagd/demo.flagd.json"
+    ]
     ports:
-      - "${FEATURE_FLAG_SERVICE_PORT}"                                  # Feature Flag Service UI
-      - "${FEATURE_FLAG_GRPC_SERVICE_PORT}"                             # Feature Flag Service gRPC API
-    environment:
-      - FEATURE_FLAG_SERVICE_PORT
-      - FEATURE_FLAG_GRPC_SERVICE_PORT
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      - OTEL_SERVICE_NAME=featureflagservice
-      - DATABASE_URL=ecto://ffs:ffs@ffspostgres:5432/ffs
-    healthcheck:
-      test: ["CMD", "curl", "-H", "baggage: synthetic_request=true", "-f", "http://localhost:${FEATURE_FLAG_SERVICE_PORT}"]
-    depends_on:
-      ffspostgres:
-        condition: service_healthy
-    logging: *logging
+      - 8013
+    volumes:
+      - ./src/flagd:/etc/flagd
+    logging:
+      *logging
 
   # Fraud Detection service
   frauddetectionservice:
@@ -327,14 +322,13 @@ services:
       resources:
         limits:
           memory: 50M
+    restart: unless-stopped
     ports:
       - "${ENVOY_PORT}:${ENVOY_PORT}"
       - 10000:10000
     environment:
       - FRONTEND_PORT
       - FRONTEND_HOST
-      - FEATURE_FLAG_SERVICE_PORT
-      - FEATURE_FLAG_SERVICE_HOST
       - LOCUST_WEB_HOST
       - LOCUST_WEB_PORT
       - GRAFANA_SERVICE_PORT
@@ -348,8 +342,6 @@ services:
       - ENVOY_PORT
     depends_on:
       frontend:
-        condition: service_started
-      featureflagservice:
         condition: service_started
       loadgenerator:
         condition: service_started
@@ -409,12 +401,16 @@ services:
       - "${PAYMENT_SERVICE_PORT}"
     environment:
       - PAYMENT_SERVICE_PORT
+      - FLAGD_HOST
+      - FLAGD_PORT
       - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=paymentservice
     depends_on:
       otelcol:
+        condition: service_started
+      flagd:
         condition: service_started
     logging: *logging
 
@@ -436,13 +432,16 @@ services:
       - "${PRODUCT_CATALOG_SERVICE_PORT}"
     environment:
       - PRODUCT_CATALOG_SERVICE_PORT
-      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - FLAGD_HOST
+      - FLAGD_PORT
       - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=productcatalogservice
     depends_on:
       otelcol:
+        condition: service_started
+      flagd:
         condition: service_started
     logging: *logging
 
@@ -493,7 +492,8 @@ services:
     environment:
       - RECOMMENDATION_SERVICE_PORT
       - PRODUCT_CATALOG_SERVICE_ADDR
-      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - FLAGD_HOST
+      - FLAGD_PORT
       - OTEL_PYTHON_LOG_CORRELATION=true
       - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
@@ -501,11 +501,11 @@ services:
       - OTEL_SERVICE_NAME=recommendationservice
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
     depends_on:
-      featureflagservice:
-        condition: service_started
       productcatalogservice:
         condition: service_started
       otelcol:
+        condition: service_started
+      flagd:
         condition: service_started
     logging: *logging
 
@@ -528,7 +528,7 @@ services:
     environment:
       - SHIPPING_SERVICE_PORT
       - QUOTE_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_GRPC}/v1/traces
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_GRPC}
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=shippingservice
     depends_on:
@@ -539,33 +539,6 @@ services:
   # ******************
   # Dependent Services
   # ******************
-  # Postgres used by Feature Flag service
-  ffspostgres:
-    image: ${IMAGE_NAME}:${DEMO_VERSION}-ffspostgres
-    container_name: ffs-postgres
-    build:
-      context: ./
-      dockerfile: ./src/ffspostgres/Dockerfile
-      cache_from:
-        - ${IMAGE_NAME}:${IMAGE_VERSION}-ffspostgres
-    deploy:
-      resources:
-        limits:
-          memory: 120M
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=ffs
-      - POSTGRES_DB=ffs
-      - POSTGRES_PASSWORD=ffs
-    volumes:
-      - ./src/ffspostgres/update-scripts/99-ffs_update.sql:/docker-entrypoint-initdb.d/99-ffs_update.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d ffs -U ffs"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging: *logging
-
   # Kafka used by Checkout, Accounting, and Fraud Detection services
   kafka:
     image: ${IMAGE_NAME}:${DEMO_VERSION}-kafka
@@ -828,6 +801,8 @@ services:
       accountingservice:
         condition: service_started
       frauddetectionservice:
+        condition: service_started
+      flagd:
         condition: service_started
 
   tracetest-server:
