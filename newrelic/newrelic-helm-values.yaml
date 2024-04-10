@@ -12,6 +12,9 @@ default:
 
 opentelemetry-collector:
   mode: daemonset
+  presets:
+    hostMetrics:
+      enabled: true
   config:
     processors:
       resourcedetection:
@@ -31,11 +34,11 @@ opentelemetry-collector:
       pipelines:
         traces:
           processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [otlp, debug, spanmetrics, otlp/newrelic]
+          exporters: [otlp, debug, spanmetrics, otlphttp/newrelic]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [otlphttp/prometheus, debug, otlp/newrelic]
+          exporters: [otlphttp/prometheus, debug, otlphttp/newrelic]
         logs:
           processors: [memory_limiter, resource, resourcedetection, batch]
-          exporters: [opensearch, debug, otlp/newrelic]
+          exporters: [opensearch, debug, otlphttp/newrelic]
