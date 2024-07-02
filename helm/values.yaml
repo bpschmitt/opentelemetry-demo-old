@@ -344,18 +344,46 @@ opentelemetry-collector:
           # Default: 60s.
           metrics_flush_interval: 30s
 
+      transform:
+        log_statements:
+        - context: log
+          statements:
+            # The OpenTelemetry log SDK says the trace context should be encoded in trace_id and span_id,
+            # but New Relic conventions expects the fields to be dot delimited trace.id and span.id. We
+            # use the transform processor to replace trace_id => trace.id, span_id => span.id.
+            # https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/README.md#trace-context-in-legacy-formats
+            - replace_pattern(body, "\"trace_id\":", "\"trace.id\":")
+            - replace_pattern(body, "\"span_id\":", "\"span.id\":")
+            - truncate_all(attributes, 4095)
+            - truncate_all(resource.attributes, 4095)
+        metric_statements:
+          - context: metric
+            statements:
+              - set(description, "Measures the duration of inbound HTTP requests") where name == "http.server.duration"
+        trace_statements:
+          - context: span
+            statements:
+              - truncate_all(attributes, 4095)
+              - truncate_all(resource.attributes, 4095)
+
+      metricstransform:
+        transforms:
+          include: duration
+          action: update
+          new_name: http.server.request.duration
+
       service:
         extensions: [health_check, zpages]
         pipelines:
           traces:
-            processors: [memory_limiter, resource, resourcedetection, k8sattributes, batch]
+            processors: [memory_limiter, resource, resourcedetection, k8sattributes, batch, transform]
             exporters: [otlp, debug, spanmetrics/full]
           metrics:
             receivers: [otlp, spanmetrics/full]
-            processors: [memory_limiter, resource, resourcedetection, k8sattributes, cumulativetodelta, batch]
+            processors: [memory_limiter, resource, resourcedetection, k8sattributes, cumulativetodelta, batch, metricstransform, transform]
             exporters: [otlp]
           logs:
-            processors: [memory_limiter, resource, batch]
+            processors: [memory_limiter, resource, batch, transform]
             exporters: [otlp]
         # debug logs for the otel collector
         # telemetry:
