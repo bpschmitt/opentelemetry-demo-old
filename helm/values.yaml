@@ -181,74 +181,74 @@ opentelemetry-collector:
                     regex: __meta_kubernetes_node_label_(.+)
                 scrape_interval: 30s
 
-              - job_name: kubernetes-node-exporter
+              # - job_name: kubernetes-node-exporter
 
-                kubernetes_sd_configs:
-                  - role: endpoints
+              #   kubernetes_sd_configs:
+              #     - role: endpoints
 
-                relabel_configs:
-                  - action: keep
-                    regex: true
-                    source_labels:
-                      - __meta_kubernetes_service_annotation_prometheus_io_scrape
-                  - action: drop
-                    regex: true
-                    source_labels:
-                      - __meta_kubernetes_service_annotation_prometheus_io_scrape_slow
-                  - action: replace
-                    regex: (https?)
-                    source_labels:
-                      - __meta_kubernetes_service_annotation_prometheus_io_scheme
-                    target_label: __scheme__
-                  - action: replace
-                    regex: (.+)
-                    source_labels:
-                      - __meta_kubernetes_service_annotation_prometheus_io_path
-                    target_label: __metrics_path__
-                  - action: replace
-                    regex: (.+?)(?::\d+)?;(\d+)
-                    replacement: $1:$2
-                    source_labels:
-                      - __address__
-                      - __meta_kubernetes_service_annotation_prometheus_io_port
-                    target_label: __address__
-                  - action: keep
-                    regex: node-exporter-prometheus-node-exporter
-                    source_labels:
-                      - __meta_kubernetes_service_name
-                  - action: replace
-                    source_labels:
-                      - __meta_kubernetes_namespace
-                    target_label: namespace
-                  - action: replace
-                    source_labels:
-                      - __meta_kubernetes_service_name
-                    target_label: service
-                  - action: replace
-                    source_labels:
-                      - __meta_kubernetes_pod_node_name
-                    target_label: node
-                scrape_interval: 30s
+              #   relabel_configs:
+              #     - action: keep
+              #       regex: true
+              #       source_labels:
+              #         - __meta_kubernetes_service_annotation_prometheus_io_scrape
+              #     - action: drop
+              #       regex: true
+              #       source_labels:
+              #         - __meta_kubernetes_service_annotation_prometheus_io_scrape_slow
+              #     - action: replace
+              #       regex: (https?)
+              #       source_labels:
+              #         - __meta_kubernetes_service_annotation_prometheus_io_scheme
+              #       target_label: __scheme__
+              #     - action: replace
+              #       regex: (.+)
+              #       source_labels:
+              #         - __meta_kubernetes_service_annotation_prometheus_io_path
+              #       target_label: __metrics_path__
+              #     - action: replace
+              #       regex: (.+?)(?::\d+)?;(\d+)
+              #       replacement: $1:$2
+              #       source_labels:
+              #         - __address__
+              #         - __meta_kubernetes_service_annotation_prometheus_io_port
+              #       target_label: __address__
+              #     - action: keep
+              #       regex: node-exporter-prometheus-node-exporter
+              #       source_labels:
+              #         - __meta_kubernetes_service_name
+              #     - action: replace
+              #       source_labels:
+              #         - __meta_kubernetes_namespace
+              #       target_label: namespace
+              #     - action: replace
+              #       source_labels:
+              #         - __meta_kubernetes_service_name
+              #       target_label: service
+              #     - action: replace
+              #       source_labels:
+              #         - __meta_kubernetes_pod_node_name
+              #       target_label: node
+              #   scrape_interval: 30s
 
-              - job_name: "kubernetes-service-endpoints"
+              # - job_name: "kubernetes-service-endpoints"
 
-                kubernetes_sd_configs:
-                  - role: endpoints
+              #   kubernetes_sd_configs:
+              #     - role: endpoints
 
-                relabel_configs:
-                  # Example relabel to scrape only endpoints that have
-                  # "example.io/should_be_scraped = true" annotation.
-                  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-                    action: keep
-                    regex: true
-                  - action: labelmap
-                    regex: __meta_kubernetes_service_label_(.+)
-                  - source_labels: [__meta_kubernetes_namespace]
-                    action: replace
-                    target_label: namespace
-                  - source_labels: [__meta_kubernetes_service_name]
-                    action: replace
-                    target_label: service
+              #   relabel_configs:
+              #     # Example relabel to scrape only endpoints that have
+              #     # "example.io/should_be_scraped = true" annotation.
+              #     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+              #       action: keep
+              #       regex: true
+              #     - action: labelmap
+              #       regex: __meta_kubernetes_service_label_(.+)
+              #     - source_labels: [__meta_kubernetes_namespace]
+              #       action: replace
+              #       target_label: namespace
+              #     - source_labels: [__meta_kubernetes_service_name]
+              #       action: replace
+              #       target_label: service
 
       exporters:
         otlp:
@@ -310,6 +310,32 @@ opentelemetry-collector:
         #         - kube_.*
         #         - system.*
         memory_limiter: null
+        transform:
+          log_statements:
+          - context: log
+            statements:
+              # The OpenTelemetry log SDK says the trace context should be encoded in trace_id and span_id,
+              # but New Relic conventions expects the fields to be dot delimited trace.id and span.id. We
+              # use the transform processor to replace trace_id => trace.id, span_id => span.id.
+              # https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/README.md#trace-context-in-legacy-formats
+              - replace_pattern(body, "\"trace_id\":", "\"trace.id\":")
+              - replace_pattern(body, "\"span_id\":", "\"span.id\":")
+              - truncate_all(attributes, 4095)
+              - truncate_all(resource.attributes, 4095)
+          metric_statements:
+            - context: metric
+              statements:
+                - set(description, "Measures the duration of inbound HTTP requests") where name == "http.server.duration"
+          trace_statements:
+            - context: span
+              statements:
+                - truncate_all(attributes, 4095)
+                - truncate_all(resource.attributes, 4095)
+        metricstransform:
+          transforms:
+            include: duration
+            action: update
+            new_name: http.server.request.duration
 
       connectors:
         spanmetrics/full:
@@ -343,34 +369,6 @@ opentelemetry-collector:
           # The period on which all metrics (whose dimension keys remain in cache) will be emitted.
           # Default: 60s.
           metrics_flush_interval: 30s
-
-      transform:
-        log_statements:
-        - context: log
-          statements:
-            # The OpenTelemetry log SDK says the trace context should be encoded in trace_id and span_id,
-            # but New Relic conventions expects the fields to be dot delimited trace.id and span.id. We
-            # use the transform processor to replace trace_id => trace.id, span_id => span.id.
-            # https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/README.md#trace-context-in-legacy-formats
-            - replace_pattern(body, "\"trace_id\":", "\"trace.id\":")
-            - replace_pattern(body, "\"span_id\":", "\"span.id\":")
-            - truncate_all(attributes, 4095)
-            - truncate_all(resource.attributes, 4095)
-        metric_statements:
-          - context: metric
-            statements:
-              - set(description, "Measures the duration of inbound HTTP requests") where name == "http.server.duration"
-        trace_statements:
-          - context: span
-            statements:
-              - truncate_all(attributes, 4095)
-              - truncate_all(resource.attributes, 4095)
-
-      metricstransform:
-        transforms:
-          include: duration
-          action: update
-          new_name: http.server.request.duration
 
       service:
         extensions: [health_check, zpages]
